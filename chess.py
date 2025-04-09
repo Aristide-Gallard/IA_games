@@ -1,3 +1,6 @@
+# The goal of this code is to try to code a cehss engine and make it compete against an AI.
+# For simplification reasons (and fun) there will be no rules. It end when a player lose theiir king
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,9 +40,9 @@ class piece:
                     if (board[x][y+1]=="" and y+1<8):
                         pbMoves.append(self.type+LETTERS[x]+str(y)+LETTERS[x]+str(y+1))
                     if (x+1<8 and board[x+1][y+1]!="" and board[x+1][y+1].color!=self.color):
-                            pbMoves.append(self.type+LETTERS[x]+str(y)+LETTERS[x+1]+str(y+1))
+                        pbMoves.append(self.type+LETTERS[x]+str(y)+LETTERS[x+1]+str(y+1))
                     if (x-1>=0 and board[x-1][y+1]!="" and board[x-1][y+1].color!=self.color):
-                            pbMoves.append(self.type+LETTERS[x]+str(y)+LETTERS[x-1]+str(y+1))
+                        pbMoves.append(self.type+LETTERS[x]+str(y)+LETTERS[x-1]+str(y+1))
                 case "n":
                     for i in range(2):
                         if (x+(2*((-1)**i))>=0 and x+(2*((-1)**i))<8 and y-1>=0 and y-1<8):
@@ -374,7 +377,6 @@ class piece:
                             pbMoves.append(self.type + LETTERS[x] + str(y) + LETTERS[x-i] + str(y-i))
                         else:
                             break
-                
 
 def draw_chessboard():
     aboard = np.zeros((8,8), dtype=float)
@@ -435,25 +437,25 @@ def on_click(event):
     if event.xdata is not None and event.ydata is not None:
         col = round(event.xdata)
         row = round(event.ydata)
-        row = 7 - row
-        moved=0
+        row = 7 - row # bc top to bottom and want inverse
         for move in pbMoves:
             if col == NUMBERS[move[3]] and str(row) == move[4]:
                 toMove(move)
-                moved=1
+                draw_chessboardm()
+                return
         if board[col][row]=="":
             print("you can't click here")
-        elif ((moved==0 and board[col][row].color=="w" and turn%2==0) or (moved==0 and board[col][row].color=="b" and turn%2==1)):
+        elif ((board[col][row].color=="w" and turn%2==0) or (board[col][row].color=="b" and turn%2==1)):
             board[col][row].checkmoves(col,row)
         draw_chessboardm()
         
 def toMove(move):
-    global turn
-    board[NUMBERS[move[3]]][int(move[4])] = board[NUMBERS[move[1]]][int(move[2])]
-    board[NUMBERS[move[1]]][int(move[2])] = ""
-    if (move[-1]=="p"):
+    global turn # to get turn and not create local variable 
+    board[NUMBERS[move[3]]][int(move[4])] = board[NUMBERS[move[1]]][int(move[2])] # replace
+    board[NUMBERS[move[1]]][int(move[2])] = "" # del
+    if (move[-1]=="p"): # en passant
         board[NUMBERS[move[3]]][int(move[2])] = ""
-    moves.append(move)
+    moves.append(move) # to store
     turn+=1
     pbMoves.clear()
     print(moves)
@@ -482,9 +484,9 @@ def setup_board():
     board[4][7] = piece("k","b")
         
     
-board = [([("")for j in range(8)])for i in range(8)]
-moves = ["start"]
-pbMoves = []
+board = [([("")for _ in range(8)])for _ in range(8)] # to initialize, could be better to use numpy but it's like that
+moves = ["start"] # to avoid creating errors when checking previous move (en passant)
+pbMoves = [] # list of possibles moves
 
 def main():
     draw_chessboard()

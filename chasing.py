@@ -1,3 +1,7 @@
+# This is a simulation where there is 3 tribes with each one eating another.
+# The equation is linear so don't expect any inteligent comportment.
+# It's simple but fun to watch. For the more serious projects I will maybe post them later.
+
 import numpy as np
 import pygame
 
@@ -14,12 +18,13 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 # AI Model Parameters
-INPUT_SIZE = 8  # State size
-OUTPUT_SIZE = 2  # Velocity (vx, vy)
+INPUT_SIZE = 8 
+OUTPUT_SIZE = 2
 MUTATION_RATE = 0.1
 ENERGY_TO_REPRODUCE = 100
-ENERGY_LOSS_PER_TICK = 1
+ENERGY_LOSS_PER_TICK = 1 # lose energy when it is near a wall 
 EAT_DISTANCE = 10
+
 class Individual:
     def __init__(self, x, y, vx=0, vy=0, tribe=0, model=None):
         self.x = x
@@ -44,8 +49,8 @@ class Individual:
             self.energy -= ENERGY_LOSS_PER_TICK
     
     def decide_movement(self, state):
-        output = np.dot(self.model, state)  # Simple linear transformation
-        self.vx, self.vy = np.tanh(output)  # Keep velocity in range (-1,1)
+        output = np.dot(self.model, state)
+        self.vx, self.vy = np.tanh(output)
     
     def eat(self, other):
         if np.linalg.norm([self.x - other.x, self.y - other.y]) < EAT_DISTANCE:
