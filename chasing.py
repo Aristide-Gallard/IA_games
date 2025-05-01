@@ -20,7 +20,7 @@ clock = pygame.time.Clock()
 # AI Model Parameters
 INPUT_SIZE = 8 
 OUTPUT_SIZE = 2
-MUTATION_RATE = 0.1
+MUTATION_RATE = 0.2
 ENERGY_TO_REPRODUCE = 100
 ENERGY_LOSS_PER_TICK = 1 # lose energy when it is near a wall 
 EAT_DISTANCE = 10
