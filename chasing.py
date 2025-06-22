@@ -20,7 +20,7 @@ clock = pygame.time.Clock()
 # AI Model Parameters
 INPUT_SIZE = 8 
 OUTPUT_SIZE = 2
-MUTATION_RATE = 0.2
+MUTATION_RATE = 0.3
 ENERGY_TO_REPRODUCE = 100
 ENERGY_LOSS_PER_TICK = 1 # lose energy when it is near a wall 
 EAT_DISTANCE = 10
@@ -88,14 +88,21 @@ def compute_state(x, y, vx, vy, prey_positions, predator_positions, k=3):
     return state
 
 num_individuals = 20
-tribes = [
-    [Individual(np.random.randint(0, WIDTH), np.random.randint(0, HEIGHT), tribe=i) for _ in range(num_individuals)]
-    for i in range(3)
-]
+if (bool(input("Do you want to start where you left ? (True / False)"))):
+    best = np.load("./chasing_best.npz")
+    best_models = [best['red'], best['blue'], best['green']]
+    tribes = [
+        [Individual(np.random.randint(0, WIDTH), np.random.randint(0, HEIGHT), tribe=i, model = best_models[i]) for _ in range(num_individuals)]
+        for i in range(3)
+    ]
+else : 
+    tribes = [
+        [Individual(np.random.randint(0, WIDTH), np.random.randint(0, HEIGHT), tribe=i) for _ in range(num_individuals)]
+        for i in range(3)
+    ]
 
 lastIndTribe = [0,0,0]
 score = [0,0,0]
-
 running = True
 while running:
     screen.fill(BLACK)
@@ -131,7 +138,6 @@ while running:
             if len(tribes[i%3])==1:
                 lastIndTribe[i%3]=ind.model
 
-    
     for new_ind in new_individuals:
         tribes[new_ind.tribe].append(new_ind)
     if  len(tribes[0])+len(tribes[1])+len(tribes[2])==1:
@@ -144,6 +150,8 @@ while running:
         else:
             print("green win")
             score[2]+=1
+        #to save uncomment the following line
+        np.savez("chasing_best", red = lastIndTribe[0], blue = lastIndTribe[1], green = lastIndTribe[2])
         
         tribes = [
     [Individual(np.random.randint(0, WIDTH), np.random.randint(0, HEIGHT), tribe=i,model=lastIndTribe[i]) for _ in range(num_individuals)]

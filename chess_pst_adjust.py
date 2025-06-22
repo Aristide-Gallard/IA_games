@@ -6,6 +6,7 @@ import numpy as np
 import random
 import chess_pst
 import copy
+import time
 
 LETTERS = ["a","b","c","d","e","f","g","h"]
 NUMBERS = {
@@ -426,33 +427,44 @@ class piece:
                             break
         return list(pbMoves)
 
-class EvalNet:
-    def __init__(self, parent=0):
-        # Initialize weights and biases
-        if parent==0:
-            self.w1 = np.random.rand(10, 64)
-            self.b1 = np.random.rand(10, 1)
-            self.w2 = np.random.rand(1, 10)
-            self.b2 = np.random.rand(1, 1)
-        else:
-            self.w1 = parent.w1 + np.random.rand(10, 64) * 0.5
-            self.b1 = parent.b1 + np.random.rand(10, 1) * 0.5
-            self.w2 = parent.w2 + np.random.rand(1, 10) * 0.5
-            self.b2 = parent.b2 + np.random.rand(1, 1) * 0.5
-
-    def forward(self, x):
-        if type(x)==int():
-            if x==1:
-                return 1000000000000000
-            elif x==-1:
-                return -100000000000000
-        self.z1 = self.w1.dot(x) + self.b1
-        self.a1 = relu(self.z1)
-        self.z2 = self.w2.dot(self.a1) + self.b2
-        return self.z2[0][0]
-
-def relu(x):
-        return np.maximum(0, x)
+class model:
+    def __init__(self, p="", n="", b="", k="", r="", q="", model="",parent=""):
+        if len(model)==0:    
+            self.PST = {
+                "p" : p,
+                "n" : n,
+                "b" : b,
+                "k" : k,
+                "r" : r,
+                "q" : q
+            }
+        elif parent!="":
+            for piece in parent.PST:
+                for col in piece:
+                    for value in col:
+                        value += random.randrange(-5,5)/10
+            self.PST = {
+                "p" : p,
+                "n" : n,
+                "b" : b,
+                "k" : k,
+                "r" : r,
+                "q" : q
+            }
+        else : 
+            for piece in model:
+                for col in piece:
+                    for value in col:
+                        value += random.randrange(-5,5)/10
+            self.PST = {
+                "p" : p,
+                "n" : n,
+                "b" : b,
+                "k" : k,
+                "r" : r,
+                "q" : q
+            }
+        
 
 def draw_chessboard():
     aboard = np.zeros((8,8), dtype=float)
@@ -552,21 +564,10 @@ def setup_board():
     for i in range(2):
         board[i*3+2][7] = piece("b","b")
     
-    board[4][0] = piece("q","w")
-    board[3][0] = piece("k","w")
-    board[4][7] = piece("q","b")
-    board[3][7] = piece("k","b")
-
-# first engine, wanted to make it in another file but causes problems
-def ce_random(color):
-    totalMoves = []
-    for i in range(8):
-        for j in range(8):
-            if board[i][j]!="" and board[i][j].color==color:
-                myPbMoves = board[i][j].checkmoves(i,j, board)
-                for move in myPbMoves:
-                    totalMoves.append(move) 
-    return totalMoves[random.randint(0,len(totalMoves)-1)]
+    board[3][0] = piece("q","w")
+    board[4][0] = piece("k","w")
+    board[3][7] = piece("q","b")
+    board[4][7] = piece("k","b")
 
 # An engine solely based on the position of each individual piece, later the depth parameter will be added
 def ce_pos(color, depth):
@@ -619,19 +620,30 @@ def switch_color(color):
     return "b" if color == "w" else "w"
 
 # a function to evaluate the position of a given board
-def ce_pos_eval(myboard):
+def ce_pos_eval(myboard, pst=""):
     if myboard==1 or myboard==(-1):
         return (100000000000000*myboard)
     value = 0
-    for i in range(8):
-        for j in range(8):
-            if myboard[i][j]!="":
-                if myboard[i][j].color=="w":
-                    value+=P_VALUES[myboard[i][j].type]
-                    value+=PST[myboard[i][j].type][i][j]
-                elif myboard[i][j].color=="b":
-                    value-=P_VALUES[myboard[i][j].type]
-                    value-=PST[myboard[i][j].type][i][j]
+    if pst=="":
+        for i in range(8):
+            for j in range(8):
+                if myboard[i][j]!="":
+                    if myboard[i][j].color=="w":
+                        value+=P_VALUES[myboard[i][j].type]
+                        value+=PST[myboard[i][j].type][i][j]
+                    elif myboard[i][j].color=="b":
+                        value-=P_VALUES[myboard[i][j].type]
+                        value-=PST[myboard[i][j].type][i][j]
+    else:
+        for i in range(8):
+            for j in range(8):
+                if myboard[i][j]!="":
+                    if myboard[i][j].color=="w":
+                        value+=P_VALUES[myboard[i][j].type]
+                        value+=pst.PST[myboard[i][j].type][i][j]
+                    elif myboard[i][j].color=="b":
+                        value-=P_VALUES[myboard[i][j].type]
+                        value-=pst.PST[myboard[i][j].type][i][j]
     return value
 
 def ce_pos_pbBoard(move, current_board):
@@ -678,25 +690,6 @@ def encode_board(board):
                 vec.append(piece_map[color + ptype])
     return np.array(vec).reshape(-1, 1)
 
-def ce_nn_eval(color, model):
-    bestMove = ["", 0]
-    
-    for i in range(8):
-        for j in range(8):
-            if board[i][j] != "" and board[i][j].color == color:
-                myPbMoves = board[i][j].checkmoves(i, j, board)
-                for move in myPbMoves:
-                    pbBoard = ce_pos_pbBoard(move, board)
-                    value = model.forward(encode_board(pbBoard))
-
-                    if bestMove[0] == "":
-                        bestMove = [move, value]
-                    if color == "w" and value > bestMove[1]:
-                        bestMove = [move, value]
-                    elif color == "b" and value < bestMove[1]:
-                        bestMove = [move, value]
-    return bestMove[0]
-
 def on_click(event):
     if event.xdata is not None and event.ydata is not None:
         global board
@@ -739,8 +732,8 @@ def on_click(event):
 board = [([("")for _ in range(8)])for _ in range(8)] # to initialize, could be better to use numpy but it's like that
 moves = ["start"] # to avoid creating errors when checking previous move (en passant)
 pbMoves_click = []
-model = EvalNet()
-models = [([EvalNet(model),0])for i in range(10)]
+pb_pst = model(model=PST)
+models = [([model(parent=pb_pst),0])for i in range(10)]
 
 def main():
     global board
@@ -751,7 +744,7 @@ def main():
     display_pieces()
     plt.gcf().canvas.mpl_connect('button_press_event', on_click)
     plt.ion()
-    plt.show(block=True)# uncomment this line to play against the bot
+    #plt.show(block=True)# uncomment this line to play against the bot
     plt.show()
     pbMoves_click.clear()
     res=0
