@@ -6,7 +6,7 @@ import numpy as np
 import pygame
 
 # Initialize pygame
-WIDTH, HEIGHT = 800, 600
+# WIDTH, HEIGHT = 800, 600
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -14,7 +14,9 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
 pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
+WIDTH, HEIGHT = screen.get_size()
 clock = pygame.time.Clock()
 
 # AI Model Parameters
